@@ -105,7 +105,10 @@ unconstrained fn test_remove_signer_rejects_nonexistent() {
     let nonexistent_signer = utils::test_pubkey_4();
     env.call_private(
         owner,
-        MultisigAccount::at(contract_address).remove_signer(nonexistent_signer.x, nonexistent_signer.y),
+        MultisigAccount::at(contract_address).remove_signer(
+            nonexistent_signer.x,
+            nonexistent_signer.y,
+        ),
     );
 }
 
@@ -120,10 +123,7 @@ unconstrained fn test_update_threshold_function_exists() {
     let (env, contract_address, owner) = utils::setup_multisig(2, 3);
 
     // Call update_threshold to lower threshold from 2 to 1
-    env.call_private(
-        owner,
-        MultisigAccount::at(contract_address).update_threshold(1),
-    );
+    env.call_private(owner, MultisigAccount::at(contract_address).update_threshold(1));
 
     // If we get here, the function was callable with correct arguments
     assert(!contract_address.is_zero(), "Contract should exist after update_threshold");
@@ -136,10 +136,7 @@ unconstrained fn test_update_threshold_increase() {
     let (env, contract_address, owner) = utils::setup_multisig(1, 3);
 
     // Increase threshold from 1 to 2
-    env.call_private(
-        owner,
-        MultisigAccount::at(contract_address).update_threshold(2),
-    );
+    env.call_private(owner, MultisigAccount::at(contract_address).update_threshold(2));
 
     assert(!contract_address.is_zero(), "Contract should exist after threshold increase");
 }
@@ -150,10 +147,7 @@ unconstrained fn test_update_threshold_rejects_zero() {
     let (env, contract_address, owner) = utils::setup_multisig(2, 3);
 
     // Try to set threshold to 0 - should fail
-    env.call_private(
-        owner,
-        MultisigAccount::at(contract_address).update_threshold(0),
-    );
+    env.call_private(owner, MultisigAccount::at(contract_address).update_threshold(0));
 }
 
 /// Test that update_threshold rejects threshold exceeding signer count.
@@ -163,10 +157,7 @@ unconstrained fn test_update_threshold_rejects_exceeds_signers() {
     let (env, contract_address, owner) = utils::setup_multisig(1, 2);
 
     // Try to set threshold to 3 (exceeds signer_count of 2)
-    env.call_private(
-        owner,
-        MultisigAccount::at(contract_address).update_threshold(3),
-    );
+    env.call_private(owner, MultisigAccount::at(contract_address).update_threshold(3));
 }
 
 // ============================================================================
@@ -187,10 +178,7 @@ unconstrained fn test_add_signer_then_update_threshold() {
     );
 
     // Now update threshold from 1 to 2
-    env.call_private(
-        owner,
-        MultisigAccount::at(contract_address).update_threshold(2),
-    );
+    env.call_private(owner, MultisigAccount::at(contract_address).update_threshold(2));
 
     assert(!contract_address.is_zero(), "Contract should exist after operations");
 }
@@ -202,10 +190,7 @@ unconstrained fn test_update_threshold_then_remove_signer() {
     let (env, contract_address, owner) = utils::setup_multisig(2, 3);
 
     // Lower threshold first
-    env.call_private(
-        owner,
-        MultisigAccount::at(contract_address).update_threshold(1),
-    );
+    env.call_private(owner, MultisigAccount::at(contract_address).update_threshold(1));
 
     // Now remove a signer (signer 3)
     let signer_to_remove = utils::test_pubkey_3();

@@ -1,5 +1,5 @@
-use crate::test::utils;
 use crate::MultisigAccount;
+use crate::test::utils;
 use dep::aztec::test::helpers::test_environment::TestEnvironment;
 
 #[test]

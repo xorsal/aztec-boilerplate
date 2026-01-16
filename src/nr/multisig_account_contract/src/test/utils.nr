@@ -1,7 +1,6 @@
 use crate::MultisigAccount;
 use dep::aztec::{
-    protocol_types::address::AztecAddress,
-    test::helpers::test_environment::TestEnvironment,
+    protocol_types::address::AztecAddress, test::helpers::test_environment::TestEnvironment,
 };
 use std::embedded_curve_ops::EmbeddedCurvePoint;
 
@@ -117,11 +116,7 @@ pub unconstrained fn deploy_multisig(
 ) -> AztecAddress {
     let signers = create_test_signers(signer_count);
 
-    let initializer = MultisigAccount::interface().constructor(
-        threshold,
-        signers,
-        signer_count,
-    );
+    let initializer = MultisigAccount::interface().constructor(threshold, signers, signer_count);
 
     // Deploy using the standard pattern - env.deploy() automatically assigns
     // a unique secret for key derivation for the contract address
