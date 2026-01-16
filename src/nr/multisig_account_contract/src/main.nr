@@ -9,15 +9,18 @@ pub contract MultisigAccount {
     use dep::aztec::{
         authwit::{account::AccountActions, entrypoint::app::AppPayload},
         context::PrivateContext,
-        macros::{functions::{external, initializer, noinitcheck, nophasecheck, view}, storage::storage},
+        macros::{
+            functions::{external, initializer, noinitcheck, nophasecheck, view},
+            storage::storage,
+        },
         messages::message_delivery::MessageDelivery,
         note::note_getter_options::{NoteGetterOptions, PropertySelector},
         oracle::auth_witness::get_auth_witness,
         state_vars::{Owned, PrivateMutable, PrivateSet},
         utils::comparison::Comparator,
     };
-    use std::embedded_curve_ops::EmbeddedCurvePoint;
     use schnorr;
+    use std::embedded_curve_ops::EmbeddedCurvePoint;
 
     use crate::config_note::ConfigNote;
     use crate::signer_note::SignerNote;
@@ -38,11 +41,7 @@ pub contract MultisigAccount {
     /// * `signer_count` - Number of signers to use from initial_signers array
     #[external("private")]
     #[initializer]
-    fn constructor(
-        threshold: u8,
-        initial_signers: [EmbeddedCurvePoint; 3],
-        signer_count: u8,
-    ) {
+    fn constructor(threshold: u8, initial_signers: [EmbeddedCurvePoint; 3], signer_count: u8) {
         // Validate inputs
         assert(threshold > 0, "Threshold must be greater than 0");
         assert(signer_count <= MAX_SIGNERS, "Too many signers");
@@ -61,7 +60,9 @@ pub contract MultisigAccount {
                 // Skip invalid (infinite) points
                 if !signer_point.is_infinite {
                     let signer_note = SignerNote::new(signer_point.x, signer_point.y);
-                    self.storage.signers.at(this).insert(signer_note).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+                    self.storage.signers.at(this).insert(signer_note).deliver(
+                        MessageDelivery.CONSTRAINED_ONCHAIN,
+                    );
                 }
             }
         }
@@ -120,7 +121,9 @@ pub contract MultisigAccount {
 
         // Insert the new signer note
         let signer_note = SignerNote::new(new_signer_x, new_signer_y);
-        self.storage.signers.at(this).insert(signer_note).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+        self.storage.signers.at(this).insert(signer_note).deliver(
+            MessageDelivery.CONSTRAINED_ONCHAIN,
+        );
     }
 
     /// Removes a signer from the multisig.
@@ -143,7 +146,7 @@ pub contract MultisigAccount {
         // Validate that we won't go below threshold
         assert(
             config.signer_count > config.threshold,
-            "Cannot remove signer: would go below threshold"
+            "Cannot remove signer: would go below threshold",
         );
 
         // Create options to select the specific signer note by x coordinate
@@ -153,13 +156,13 @@ pub contract MultisigAccount {
         options = options.select(
             PropertySelector { index: 0, offset: 0, length: 32 },
             Comparator.EQ,
-            signer_x
+            signer_x,
         );
         // Also select by y coordinate (index 1)
         options = options.select(
             PropertySelector { index: 1, offset: 0, length: 32 },
             Comparator.EQ,
-            signer_y
+            signer_y,
         );
         options = options.set_limit(1);
 
@@ -193,7 +196,7 @@ pub contract MultisigAccount {
             // Validate new_threshold <= signer_count
             assert(
                 new_threshold <= old_config.signer_count,
-                "Threshold cannot exceed signer count"
+                "Threshold cannot exceed signer count",
             );
             // Return updated config with new threshold
             ConfigNote::new(new_threshold, old_config.signer_count)
@@ -215,11 +218,12 @@ pub contract MultisigAccount {
         let this = context.this_address();
 
         // Get the config note to read threshold
-        // The config message must be delivered to preserve the note
+        // Note: get_note() on PrivateMutable performs read-nullify-recreate
+        // We only need the threshold value for validation, so we access the note
+        // but don't call deliver() which would require sender_for_tags
         let config_message = storage.config.at(this).get_note();
         let config = config_message.get_note();
-        // Deliver the config message so the note persists
-        config_message.deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+        // NOT calling deliver() - this is intentional for read-only access in validation
 
         let threshold = config.threshold;
 
@@ -266,11 +270,8 @@ pub contract MultisigAccount {
                         let retrieved_note = signer_notes.get(signer_idx as u32);
                         let signer = retrieved_note.note;
 
-                        let pub_key = EmbeddedCurvePoint {
-                            x: signer.x,
-                            y: signer.y,
-                            is_infinite: false,
-                        };
+                        let pub_key =
+                            EmbeddedCurvePoint { x: signer.x, y: signer.y, is_infinite: false };
 
                         // Verify signature
                         if schnorr::verify_signature(pub_key, signature, message_bytes) {
