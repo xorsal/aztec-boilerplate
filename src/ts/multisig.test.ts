@@ -185,9 +185,195 @@ describe("Multisig Account Contract", () => {
     });
   });
 
-  // Transaction Execution tests are deferred until fee payment integration is complete.
-  // The multisig account deployment has been verified - the next step is to:
-  // 1. Fund the multisig with FeeJuice, or
-  // 2. Use external fee payment sponsorship
-  // For now, the deployment tests verify the core multisig functionality works.
+  describe("Insufficient Signatures Rejection", () => {
+    it("should reject simulation when only 1 of 2 required signatures provided", async () => {
+      // Deploy a 2-of-3 multisig with all 3 keys
+      const signer1 = await createSignerFromPrivateKey(signingKey1);
+      const signer2 = await createSignerFromPrivateKey(signingKey2);
+      const signer3 = await createSignerFromPrivateKey(signingKey3);
+
+      const config: MultisigConfig = {
+        threshold: 2,
+        signers: [signer1, signer2, signer3],
+      };
+
+      // Create and deploy with all keys (so deployment succeeds)
+      const accountContract = new MultisigAccountContract(config, [
+        signingKey1,
+        signingKey2,
+        signingKey3,
+      ]);
+
+      const secretKey = Fr.random();
+      const salt = Fr.random();
+      const accountManager = await wallet.createAccount({
+        secret: secretKey,
+        salt,
+        contract: accountContract,
+      });
+
+      // Deploy the multisig account
+      const deployMethod = await accountManager.getDeployMethod();
+      await deployMethod.send({ from: fundedAccountAddress }).wait();
+
+      // Get the multisig address
+      const multisigAddress = accountManager.address;
+
+      // Now create a new account contract with ONLY 1 signing key (insufficient)
+      const insufficientKeysContract = new MultisigAccountContract(config, [
+        signingKey1, // Only 1 key, but threshold is 2
+      ]);
+
+      // Create an account manager with the same address but insufficient keys
+      const insufficientAccountManager = await wallet.createAccount({
+        secret: secretKey,
+        salt,
+        contract: insufficientKeysContract,
+      });
+
+      // Verify it resolves to the same address
+      expect(insufficientAccountManager.address.toString()).toEqual(
+        multisigAddress.toString(),
+      );
+
+      // Get a wallet for the insufficient-keys account
+      const insufficientWallet = await insufficientAccountManager.getAccount();
+
+      // Try to simulate a call that requires authorization
+      // The entrypoint should fail because we only provide 1 signature but need 2
+      // We'll use the MultisigAccount contract's update_threshold function
+      // which requires self-authorization
+      const { MultisigAccountContract: MultisigAccountContractClass } =
+        await import("../artifacts/MultisigAccount.js");
+      const multisigContract = await MultisigAccountContractClass.at(
+        multisigAddress,
+        insufficientWallet,
+      );
+
+      // Try to update threshold - this requires authorization from the multisig
+      // With only 1 signature (threshold is 2), this should fail
+      await expect(
+        multisigContract.methods.update_threshold(1).simulate(),
+      ).rejects.toThrow();
+    });
+
+    it("should reject simulation when 1 of 3 required signatures for 3-of-3 multisig", async () => {
+      // Deploy a 3-of-3 multisig
+      const signer1 = await createSignerFromPrivateKey(signingKey1);
+      const signer2 = await createSignerFromPrivateKey(signingKey2);
+      const signer3 = await createSignerFromPrivateKey(signingKey3);
+
+      const config: MultisigConfig = {
+        threshold: 3,
+        signers: [signer1, signer2, signer3],
+      };
+
+      // Deploy with all keys
+      const accountContract = new MultisigAccountContract(config, [
+        signingKey1,
+        signingKey2,
+        signingKey3,
+      ]);
+
+      const secretKey = Fr.random();
+      const salt = Fr.random();
+      const accountManager = await wallet.createAccount({
+        secret: secretKey,
+        salt,
+        contract: accountContract,
+      });
+
+      const deployMethod = await accountManager.getDeployMethod();
+      await deployMethod.send({ from: fundedAccountAddress }).wait();
+
+      const multisigAddress = accountManager.address;
+
+      // Create account manager with only 1 key (need 3)
+      const insufficientContract = new MultisigAccountContract(config, [
+        signingKey1,
+      ]);
+
+      const insufficientManager = await wallet.createAccount({
+        secret: secretKey,
+        salt,
+        contract: insufficientContract,
+      });
+
+      const insufficientWallet = await insufficientManager.getAccount();
+
+      const { MultisigAccountContract: MultisigAccountContractClass } =
+        await import("../artifacts/MultisigAccount.js");
+      const multisigContract = await MultisigAccountContractClass.at(
+        multisigAddress,
+        insufficientWallet,
+      );
+
+      // Should fail - need 3 signatures, have 1
+      await expect(
+        multisigContract.methods.update_threshold(2).simulate(),
+      ).rejects.toThrow();
+    });
+
+    it("should reject simulation when 2 of 3 required signatures for 3-of-3 multisig", async () => {
+      // Deploy a 3-of-3 multisig
+      const signer1 = await createSignerFromPrivateKey(signingKey1);
+      const signer2 = await createSignerFromPrivateKey(signingKey2);
+      const signer3 = await createSignerFromPrivateKey(signingKey3);
+
+      const config: MultisigConfig = {
+        threshold: 3,
+        signers: [signer1, signer2, signer3],
+      };
+
+      const accountContract = new MultisigAccountContract(config, [
+        signingKey1,
+        signingKey2,
+        signingKey3,
+      ]);
+
+      const secretKey = Fr.random();
+      const salt = Fr.random();
+      const accountManager = await wallet.createAccount({
+        secret: secretKey,
+        salt,
+        contract: accountContract,
+      });
+
+      const deployMethod = await accountManager.getDeployMethod();
+      await deployMethod.send({ from: fundedAccountAddress }).wait();
+
+      const multisigAddress = accountManager.address;
+
+      // Create account manager with 2 keys (need 3)
+      const insufficientContract = new MultisigAccountContract(config, [
+        signingKey1,
+        signingKey2,
+      ]);
+
+      const insufficientManager = await wallet.createAccount({
+        secret: secretKey,
+        salt,
+        contract: insufficientContract,
+      });
+
+      const insufficientWallet = await insufficientManager.getAccount();
+
+      const { MultisigAccountContract: MultisigAccountContractClass } =
+        await import("../artifacts/MultisigAccount.js");
+      const multisigContract = await MultisigAccountContractClass.at(
+        multisigAddress,
+        insufficientWallet,
+      );
+
+      // Should fail - need 3 signatures, have 2
+      await expect(
+        multisigContract.methods.update_threshold(2).simulate(),
+      ).rejects.toThrow();
+    });
+  });
+
+  // Note: Transaction execution tests (sending actual transactions) are deferred
+  // until fee payment integration is complete. The multisig account needs FeeJuice
+  // funding or external fee sponsorship to send transactions.
+  // The deployment and simulation tests verify the core multisig functionality.
 });
