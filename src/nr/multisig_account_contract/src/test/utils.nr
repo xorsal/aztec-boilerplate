@@ -74,6 +74,13 @@ pub unconstrained fn setup_multisig(
     signer_count: u8,
 ) -> (&mut TestEnvironment, AztecAddress, AztecAddress) {
     let mut env = TestEnvironment::new();
+
+    // The contract deployment counter starts at 0, but TXE only registers keys
+    // for contracts with non-zero secrets. We do a "warmup" deployment with
+    // without_initializer() to increment the counter, so the real deployment
+    // gets a non-zero secret and has keys registered.
+    let _ = env.deploy("MultisigAccount").without_initializer();
+
     let owner = env.create_light_account();
 
     let contract_address = deploy_multisig(&mut env, owner, threshold, signer_count);
@@ -105,9 +112,9 @@ pub unconstrained fn deploy_multisig(
         signer_count,
     );
 
-    let contract_address = env.deploy("MultisigAccount").with_private_initializer(owner, initializer);
-
-    contract_address
+    // Deploy using the standard pattern - env.deploy() automatically assigns
+    // a unique secret for key derivation for the contract address
+    env.deploy("MultisigAccount").with_private_initializer(owner, initializer)
 }
 
 /// Create an empty/invalid signature array (all zeros)
