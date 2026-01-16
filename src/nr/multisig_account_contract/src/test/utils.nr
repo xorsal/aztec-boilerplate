@@ -1,5 +1,5 @@
 use crate::MultisigAccount;
-use aztec::{
+use dep::aztec::{
     protocol_types::address::AztecAddress,
     test::helpers::test_environment::TestEnvironment,
 };

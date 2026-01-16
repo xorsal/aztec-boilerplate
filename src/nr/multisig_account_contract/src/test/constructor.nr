@@ -1,6 +1,6 @@
 use crate::test::utils;
 use crate::MultisigAccount;
-use aztec::test::helpers::test_environment::TestEnvironment;
+use dep::aztec::test::helpers::test_environment::TestEnvironment;
 
 #[test]
 unconstrained fn test_utils_compile_and_import() {
