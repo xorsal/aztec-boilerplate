@@ -40,6 +40,17 @@ pub fn test_pubkey_3() -> EmbeddedCurvePoint {
     }
 }
 
+/// Test public key 4 (for testing add_signer - a new signer to add)
+/// This key is used when testing adding a 3rd signer to a 2-signer multisig
+pub fn test_pubkey_4() -> EmbeddedCurvePoint {
+    // Different test key - values chosen to be within BN254 field
+    EmbeddedCurvePoint {
+        x: 0x0444444444444444444444444444444444444444444444444444444444444444,
+        y: 0x0555555555555555555555555555555555555555555555555555555555555555,
+        is_infinite: false,
+    }
+}
+
 /// Create an array of test signers with the specified count
 pub fn create_test_signers(count: u8) -> [EmbeddedCurvePoint; 3] {
     let mut signers: [EmbeddedCurvePoint; 3] = [
