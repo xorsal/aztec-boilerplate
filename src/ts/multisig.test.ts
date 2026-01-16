@@ -372,8 +372,21 @@ describe("Multisig Account Contract", () => {
     });
   });
 
-  // Note: Transaction execution tests (sending actual transactions) are deferred
-  // until fee payment integration is complete. The multisig account needs FeeJuice
-  // funding or external fee sponsorship to send transactions.
-  // The deployment and simulation tests verify the core multisig functionality.
+  // Note: Signer management integration tests (add/remove/verify participation)
+  // are blocked on infrastructure issues:
+  //
+  // 1. Fee payment: The multisig account needs FeeJuice funding or external fee
+  //    sponsorship to send actual transactions (same blocker as task 6.2).
+  //
+  // 2. Simulation depth: While we can simulate authorization rejection (tests in
+  //    "Insufficient Signatures Rejection"), simulating successful execution
+  //    requires more account state to be properly synchronized, which currently
+  //    fails with "Array must contain at most 100 element(s)" errors in the
+  //    private log sync process.
+  //
+  // The authorization path is verified by:
+  // - Deployment tests: Successful deployment proves constructor authorization works
+  // - Rejection tests: Prove that insufficient signatures fail auth verification
+  //
+  // Signer management contract logic is tested in Noir unit tests (task 4.5).
 });
