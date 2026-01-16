@@ -7,8 +7,7 @@
  */
 
 import { type Salt, getAccountContractAddress } from "@aztec/aztec.js/account";
-import { AccountManager } from "@aztec/aztec.js/wallet";
-import type { Wallet } from "@aztec/aztec.js/wallet";
+import { AccountManager, type Wallet } from "@aztec/aztec.js/wallet";
 import { Fr } from "@aztec/foundation/curves/bn254";
 import { GrumpkinScalar } from "@aztec/foundation/curves/grumpkin";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
