@@ -8,3 +8,5 @@ codegenCache.json
 .env
 .cursor
 pxe-test/
+pxe-multisig-test/
+tsconfig.tsbuildinfo
